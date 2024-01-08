@@ -1,0 +1,9 @@
+FROM --platform=windows/amd64 plugins/base:windows-ltsc2022-amd64
+
+USER ContainerAdministrator
+
+WORKDIR C:\\app
+
+COPY ./cmd/drone-oidc.exe /app/
+
+ENTRYPOINT ["C:\\app\\drone-oidc.exe"]
