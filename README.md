@@ -15,7 +15,6 @@ Using the plugin is straightforward. You can run the plugin directly using the f
     PLUGIN_POOL_ID=POOL_ID \
     PLUGIN_PROVIDER_ID=PROVIDER_ID \
     PLUGIN_SERVICE_ACCOUNT_EMAIL=SERVICE_ACCOUNT_EMAIL \
-    DRONE_OUTPUT=DRONE_OUTPUT \
     go run main.go
 
 Additionally, you can build the Docker image with these commands:
@@ -32,7 +31,6 @@ Integrating the drone-gcp-oidc Plugin into your Harness CI pipeline is seamless.
     -e PLUGIN_POOL_ID=${POOL_ID} \
     -e PLUGIN_PROVIDER_ID=${PROVIDER_ID} \
     -e PLUGIN_SERVICE_ACCOUNT_EMAIL=${SERVICE_ACCOUNT_EMAIL} \
-    -e DRONE_OUTPUT=${DRONE_OUTPUT} \
     -v $(pwd):$(pwd) \
     -w $(pwd) \
     harnesscommunity/drone-gcp-oidc
