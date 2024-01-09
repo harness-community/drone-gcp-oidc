@@ -1,7 +1,7 @@
 # drone-gcp-oidc
 
 - [Synopsis](#Synopsis)
-- [Parameters](#Paramaters)
+- [Parameters](#Parameters)
 - [Notes](#Notes)
 - [Plugin Image](#Plugin-Image)
 - [Examples](#Examples)
