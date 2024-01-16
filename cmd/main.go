@@ -18,7 +18,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	federalToken, err := gcp.GetFederalToken(oidcIdToken, projectId, poolId, projectId)
+	federalToken, err := gcp.GetFederalToken(oidcIdToken, projectId, poolId, providerId)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
