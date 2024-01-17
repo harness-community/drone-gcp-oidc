@@ -31,9 +31,8 @@ func main() {
 	}
 
 	fmt.Println("Successfully retrieved access token")
-	fmt.Println(accessToken)
 
-	os.Setenv("GOOGLE_ACCESS_TOKEN", accessToken)
+	os.Setenv("GCLOUD_ACCESS_TOKEN", accessToken)
 
 	outputFile, err := os.OpenFile(os.Getenv("DRONE_OUTPUT"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -42,7 +41,7 @@ func main() {
 	}
 	defer outputFile.Close()
 
-	_, err = fmt.Fprintf(outputFile, "GOOGLE_ACCESS_TOKEN=%s\n", accessToken)
+	_, err = fmt.Fprintf(outputFile, "GCLOUD_ACCESS_TOKEN=%s\n", accessToken)
 	if err != nil {
 		fmt.Println("Error writing to output file:", err)
 		os.Exit(1)
