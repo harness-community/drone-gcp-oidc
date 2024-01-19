@@ -1,0 +1,53 @@
+package main
+
+import (
+	"drone/plugin/gcp-oidc/env"
+	"drone/plugin/gcp-oidc/internal/gcp"
+	"fmt"
+	"os"
+)
+
+func main() {
+	oidcIdToken := os.Getenv("PLUGIN_OIDC_TOKEN_ID")
+	projectId := os.Getenv("PLUGIN_PROJECT_ID")
+	poolId := os.Getenv("PLUGIN_POOL_ID")
+	providerId := os.Getenv("PLUGIN_PROVIDER_ID")
+	serviceAccountEmail := os.Getenv("PLUGIN_SERVICE_ACCOUNT_EMAIL_ID")
+
+	err := env.VerifyEnv()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	federalToken, err := gcp.GetFederalToken(oidcIdToken, projectId, poolId, providerId)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	accessToken, err := gcp.GetGoogleCloudAccessToken(federalToken, serviceAccountEmail)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	fmt.Println("Successfully retrieved access token")
+
+	os.Setenv("GCLOUD_ACCESS_TOKEN", accessToken)
+
+	outputFile, err := os.OpenFile(os.Getenv("DRONE_OUTPUT"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Println("Error opening output file:", err)
+		os.Exit(1)
+	}
+	defer outputFile.Close()
+
+	_, err = fmt.Fprintf(outputFile, "GCLOUD_ACCESS_TOKEN=%s\n", accessToken)
+	if err != nil {
+		fmt.Println("Error writing to output file:", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("Successfully wrote access token to environment variables")
+}
