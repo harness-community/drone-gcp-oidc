@@ -1,47 +1,41 @@
-# drone-docker-image-migration
+# drone-gcp-oidc
 
 - [Synopsis](#Synopsis)
-- [Parameters](#Paramaters)
+- [Parameters](#Parameters)
 - [Notes](#Notes)
 - [Plugin Image](#Plugin-Image)
 - [Examples](#Examples)
 
 ## Synopsis
 
-This plugin is designed to migrate a Docker image from one registry to another.
+This plugin generates an access token through the OIDC token and outputs it as an environment variable. This variable can be utilized in subsequent pipeline steps to control Google Cloud Services through the gcloud CLI or API using curl.
 
 To learn how to utilize Drone plugins in Harness CI, please consult the provided [documentation](https://developer.harness.io/docs/continuous-integration/use-ci/use-drone-plugins/run-a-drone-plugin-in-ci).
 
 ## Parameters
 
-| Parameter                                                                                                                           | Choices/<span style="color:blue;">Defaults</span> | Comments                                                                 |
-| :---------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------ | :----------------------------------------------------------------------- |
-| source_registry <span style="font-size: 10px"><br/>`string`</span> <span style="color:red; font-size: 10px">`required`</span>       |                                                   | The source docker registry                                               |
-| source_username <span style="font-size: 10px"><br/>`string`</span> <span style="color:red; font-size: 10px">`required`</span>       |                                                   | Username to login to the source registry                                 |
-| source_password <span style="font-size: 10px"><br/>`string`</span> <span style="color:red; font-size: 10px">`required`</span>       |                                                   | PAT / access token to authenticate with the source registry              |
-| destination_registry <span style="font-size: 10px"><br/>`string`</span> <span style="color:red; font-size: 10px">`required`</span>  |                                                   | The destination docker registry                                          |
-| destination_username <span style="font-size: 10px"><br/>`string`</span> <span style="color:red; font-size: 10px">`required`</span>  |                                                   | Username to login to the destination registry                            |
-| destination_password <span style="font-size: 10px"><br/>`string`</span>                                                             |                                                   | PAT / access token to authenticate with the destination registry         |
-| source_namespace <span style="font-size: 10px"><br/>`string`</span> <span style="color:red; font-size: 10px">`required`</span>      |                                                   | Source namespace to pull the image from                                  |
-| destination_namespace <span style="font-size: 10px"><br/>`string`</span> <span style="color:red; font-size: 10px">`required`</span> |                                                   | Destination namespace to push the image to                               |
-| image_name <span style="font-size: 10px"><br/>`string`</span> <span style="color:red; font-size: 10px">`required`</span>            |                                                   | The docker image name to be migrated from source to destination registry |
-| image_tag <span style="font-size: 10px"><br/>`string`</span> <span style="color:red; font-size: 10px">`required`</span>             |                                                   | The docker image tag to be migrated from source to destination registry  |
-| aws_access_key_id <span style="font-size: 10px"><br/>`string`</span>                                                                |                                                   | AWS access key ID for generating access token                            |
-| aws_secret_access_key <span style="font-size: 10px"><br/>`string`</span>                                                            |                                                   | AWS secret access key for generating access token                        |
-| aws_region <span style="font-size: 10px"><br/>`string`</span>                                                                       |                                                   | AWS region containing the ECR registry                                   |
+| Parameter                                                                                                                              | Choices/<span style="color:blue;">Defaults</span> | Comments                                         |
+| :------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------ | ------------------------------------------------ |
+| project_id <span style="font-size: 10px"><br/>`string`</span> <span style="color:red; font-size: 10px">`required`</span>               |                                                   | The project id associated with your GCP project. |
+| pool_id <span style="font-size: 10px"><br/>`string`</span> <span style="color:red; font-size: 10px">`required`</span>                  |                                                   | The pool ID for OIDC authentication.             |
+| provider_id <span style="font-size: 10px"><br/>`string`</span> <span style="color:red; font-size: 10px">`required`</span>              |                                                   | The provider ID for OIDC authentication.         |
+| service_account_email_id <span style="font-size: 10px"><br/>`string`</span> <span style="color:red; font-size: 10px">`required`</span> |                                                   | The email address of the service account.        |
 
 ## Notes
 
-While using AWS ECR as destination registy, set `destination_username` as `AWS`, and either provide the AWS access token as `destination_password`, or provide the `aws_access_key_id`, `aws_secret_access_key` and `aws_region`.
+This plugin also requires an OIDC token `HARNESS_OIDC_ID_TOKEN`, provided as a stage variable.
+
+The plugin outputs the access token in the form of an environment variable that can be accessed in the subsequent pipeline steps like this: `<+steps.STEP_ID.output.outputVariables.GCLOUD_ACCESS_TOKEN>`
 
 ## Plugin Image
 
-The plugin `harnesscommunity/drone-docker-image-migration` is available for the following architectures:
+The plugin is available for the following architectures:
 
-| OS          | Tag           |
-| ----------- | ------------- |
-| linux/amd64 | `linux-amd64` |
-| linux/arm64 | `linux-arm64` |
+| OS            | Tag             |
+| ------------- | --------------- |
+| linux/amd64   | `linux-amd64`   |
+| linux/arm64   | `linux-arm64`   |
+| windows/amd64 | `windows-amd64` |
 
 ## Examples
 
@@ -49,45 +43,28 @@ The plugin `harnesscommunity/drone-docker-image-migration` is available for the 
 # Plugin YAML
 - step:
     type: Plugin
-    name: Migration Plugin
-    identifier: Migration_Plugin
+    name: drone-gcp-oidc-plugin
+    identifier: drone_gcp_oidc_plugin
     spec:
-        connectorRef: harness-connector
-        image: harnesscommunity/drone-docker-image-migration:linux-amd64
+        connectorRef: harness-docker-connector
+        image: harnesscommunity/drone-gcp-oidc:linux-amd64
         settings:
-                source_registry: registry.hub.docker.com
-                source_username: <+variable.source_username>
-                source_password: <+secrets.getValue("source_pat")>
-                image_name: image
-                image_tag: latest
-                destination_registry: account-id.dkr.ecr.region.amazonaws.com
-                destination_username: AWS
-                destination_password: <+secrets.getValue("aws_acess_token")>
-                source_namespace: <+variable.docker_username>
-                destination_namespace: aws-repo-name
+                project_id: 22819301
+                pool_id: d8291ka22
+                service_account_email_id: test-gcp@harness.io
+                provider_id: svr-account1
 
-# Without destination_password
+
+# Run step to use the access token to list the compute zones
 - step:
-    type: Plugin
-    name: Migration Plugin
-    identifier: Migration_Plugin
+    type: Run
+    name: List Compute Engine Zone
+    identifier: list_zones
     spec:
-        connectorRef: harness-connector
-        image: harnesscommunity/drone-docker-image-migration:linux-amd64
-        settings:
-                source_registry: registry.hub.docker.com
-                source_username: <+variable.source_username>
-                source_password: <+secrets.getValue("source_pat")>
-                image_name: image
-                image_tag: latest
-                destination_registry: account-id.dkr.ecr.region.amazonaws.com
-                destination_username: AWS
-                source_namespace: <+variable.docker_username>
-                destination_namespace: aws-repo-name
-                aws_access_key_id: <+secrets.getValue("access_key_id")>
-                aws_secret_access_key: <+secrets.getValue("secret_access_key")>
-                aws_region: us-east-1
-
+        shell: Sh
+        command: |-
+            curl -H "Authorization: Bearer <+steps.STEP_ID.output.outputVariables.GCLOUD_ACCESS_TOKEN>" \
+            "https://compute.googleapis.com/compute/v1/projects/[PROJECT_ID]/zones/[ZONE]/instances"
 ```
 
-> <span style="font-size: 14px; margin-left:5px; background-color: #d3d3d3; padding: 4px; border-radius: 4px;">ℹ️ If you notice any issues in this documentation, you can [edit this document](https://github.com/harness-community/drone-docker-image-migration/blob/main/README.md) to improve it.</span>
+> <span style="font-size: 14px; margin-left:5px; background-color: #d3d3d3; padding: 4px; border-radius: 4px;">ℹ️ If you notice any issues in this documentation, you can [edit this document](https://github.com/harness-community/drone-gcp-oidc/blob/main/README.md) to improve it.</span>

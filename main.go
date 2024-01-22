@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	oidcIdToken := os.Getenv("PLUGIN_OIDC_TOKEN_ID")
+	oidcIdToken := os.Getenv("HARNESS_OIDC_ID_TOKEN")
 	projectId := os.Getenv("PLUGIN_PROJECT_ID")
 	poolId := os.Getenv("PLUGIN_POOL_ID")
 	providerId := os.Getenv("PLUGIN_PROVIDER_ID")
