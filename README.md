@@ -25,13 +25,14 @@ To learn how to utilize Drone plugins in Harness CI, please consult the provided
 
 ## Notes
 
-This plugin also requires an OIDC token `PLUGIN_OIDC_TOKEN_ID`, provided as a stage variable.
+- This plugin also requires an OIDC token `PLUGIN_OIDC_TOKEN_ID`, provided as a stage variable.
 
-Please provide the `duration` in seconds, for example, the default value is 1 hour, i.e, 3600 seconds. The service account must have the `iam.allowServiceAccountCredentialLifetimeExtension` permission to set a custom duration.
+- Please provide the `duration` in seconds, for example, the default value is 1 hour, i.e, 3600 seconds. The service account must have the `iam.allowServiceAccountCredentialLifetimeExtension` permission to set a custom duration.
 
-The plugin created `application_default_credentials.json` if the `create_application_credentials_file` flag is set to `true`, only to be used with `gradlew`, for use with `gcloud cli`, use `GCLOUD_ACCESS_TOKEN`. The `credentials.json` path is exported to `$HOME/.config/gcloud/application_default_credentials.json` variable, which can be used as `<+steps.STEP_ID.output.outputVariables.GOOGLE_APPLICATION_CREDENTIALS>`
-
-The plugin outputs the access token in the form of an environment variable that can be accessed in the subsequent pipeline steps like this: `<+steps.STEP_ID.output.outputVariables.GCLOUD_ACCESS_TOKEN>`
+- The plugin creates `application_default_credentials.json` if the `create_application_credentials_file` flag is set to `true` in the plugin settings. Then in the subsequent steps, users can run the below commands to authenticate and get the Access token:
+  - `gcloud auth login --brief --cred-file <+execution.steps.STEP_ID.output.outputVariables.GOOGLE_APPLICATION_CREDENTIALS>`
+  - `gcloud config config-helper --format="json(credential)"` - This will generate access token.
+- The plugin outputs the access token in the form of an environment variable that can be accessed in the subsequent pipeline steps like this: `<+steps.STEP_ID.output.outputVariables.GCLOUD_ACCESS_TOKEN>`
 
 ## Plugin Image
 
