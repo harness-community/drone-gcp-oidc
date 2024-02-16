@@ -9,9 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
-	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -29,8 +26,7 @@ type Args struct {
 	ProviderID  string `envconfig:"PLUGIN_PROVIDER_ID"`
 	ServiceAcc  string `envconfig:"PLUGIN_SERVICE_ACCOUNT_EMAIL_ID"`
 	Duration    string `envconfig:"PLUGIN_DURATION"`
-	CreateCreds bool   `envconfig:"PLUGIN_CREATE_CREDENTIALS_FILE"`
-	CredsPath   string `envconfig:"PLUGIN_CREDENTIALS_FILE_PATH"`
+	CreateCreds bool   `envconfig:"PLUGIN_CREATE_APPLICATION_CREDENTIALS_FILE"`
 }
 
 // Exec executes the plugin.
@@ -45,37 +41,40 @@ func Exec(ctx context.Context, args Args) error {
 		args.Duration = args.Duration + "s"
 	}
 
-	federalToken, err := GetFederalToken(args.OIDCToken, args.ProjectID, args.PoolID, args.ProviderID)
-	if err != nil {
-		return err
-	}
-
-	accessToken, err := GetGoogleCloudAccessToken(federalToken, args.ServiceAcc, args.Duration)
-
-	if err != nil {
-		return err
-	}
-
 	if args.CreateCreds {
-		credsPath, err := WriteCredentialsToFile(accessToken, args.CredsPath, args.Duration, args.OIDCToken)
+		logrus.Infof("creating credentials file\n")
+		credsPath, err := WriteCredentialsToFile(args.OIDCToken, args.ProjectID, args.PoolID, args.ProviderID, args.ServiceAcc)
 		if err != nil {
 			return err
 		}
 		logrus.Infof("credentials file written to %s\n", credsPath)
 
-		if err := WriteEnvToFile("GCLOUD_CREDENTIALS_FILE", accessToken); err != nil {
+		if err := WriteEnvToFile("GOOGLE_APPLICATION_CREDENTIALS", credsPath); err != nil {
 			return err
 		}
+
+		logrus.Infof("credentials file set as GOOGLE_APPLICATION_CREDENTIALS\n")
+	} else {
+		federalToken, err := GetFederalToken(args.OIDCToken, args.ProjectID, args.PoolID, args.ProviderID)
+		if err != nil {
+			return err
+		}
+
+		accessToken, err := GetGoogleCloudAccessToken(federalToken, args.ServiceAcc, args.Duration)
+
+		if err != nil {
+			return err
+		}
+
+		logrus.Infof("access token retrieved successfully\n")
+
+		if err := WriteEnvToFile("GCLOUD_ACCESS_TOKEN", accessToken); err != nil {
+			return err
+		}
+
+		logrus.Infof("access token set as GCLOUD_ACCESS_TOKEN\n")
+		logrus.Infof("access token written to env\n")
 	}
-
-	logrus.Infof("acess token retrieved successfully\n")
-	logrus.Infof("access token set as GCLOUD_ACCESS_TOKEN\n")
-
-	if err := WriteEnvToFile("GCLOUD_ACCESS_TOKEN", accessToken); err != nil {
-		return err
-	}
-
-	logrus.Infof("access token written to env\n")
 
 	return nil
 }
@@ -115,37 +114,58 @@ func WriteEnvToFile(key, value string) error {
 	return nil
 }
 
-func WriteCredentialsToFile(token, path, duration, idToken string) (string, error) {
-	durationInt, err := strconv.Atoi(strings.TrimSuffix(duration, "s"))
-	if err != nil {
-		return "", fmt.Errorf("failed to convert duration to int: %w", err)
+func WriteCredentialsToFile(idToken, projectNumber, workforcePoolID, providerID, serviceAccountEmail string) (string, error) {
+	homeDir := os.Getenv("DRONE_WORKSPACE")
+
+	if homeDir == "" || homeDir == "/" {
+		fmt.Print("could not get home directory, using /home/harness as home directory")
+		homeDir = "/home/harness"
 	}
 
-	path = strings.TrimSuffix(path, "/") + "/credentials.json"
-
-	expiryTime := time.Now().Add(time.Duration(durationInt) * time.Second).Format(time.RFC3339)
-
-	credentials := struct {
-		Credential struct {
-			AccessToken string  `json:"access_token"`
-			IdToken     *string `json:"id_token"`
-			TokenExpiry string  `json:"token_expiry"`
-		} `json:"credential"`
-	}{}
-
-	credentials.Credential.AccessToken = token
-	credentials.Credential.IdToken = &idToken
-	credentials.Credential.TokenExpiry = expiryTime
-
-	credentialsJSON, err := json.MarshalIndent(credentials, "", "  ")
+	idTokenDir := fmt.Sprintf("%s/tmp", homeDir)
+	err := os.MkdirAll(idTokenDir, 0755)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal credentials to JSON: %w", err)
+		return "", fmt.Errorf("failed to create tmp directory: %w", err)
 	}
 
-	err = os.WriteFile(path, credentialsJSON, 0644)
-	if err != nil {
-		return "", fmt.Errorf("failed to write credentials file: %w", err)
+	idTokenPath := fmt.Sprintf("%s/id_token", idTokenDir)
+	if err := os.WriteFile(idTokenPath, []byte(idToken), 0644); err != nil {
+		return "", fmt.Errorf("failed to write idToken to file: %w", err)
 	}
 
-	return path, nil
+	fmt.Printf("idTokenPath: %s\n", idTokenPath)
+
+	credsDir := fmt.Sprintf("%s/.config/gcloud", homeDir)
+	err = os.MkdirAll(credsDir, 0755)
+	if err != nil {
+		return "", fmt.Errorf("failed to create gcloud directory: %w", err)
+	}
+
+	// create application default credentials file at $HOME/.config/gcloud/application_default_credentials.json
+	credsPath := fmt.Sprintf("%s/application_default_credentials.json", credsDir)
+
+	data := map[string]interface{}{
+		"type":                              "external_account",
+		"audience":                          fmt.Sprintf("//iam.googleapis.com/projects/%s/locations/global/workloadIdentityPools/%s/providers/%s", projectNumber, workforcePoolID, providerID),
+		"subject_token_type":                "urn:ietf:params:oauth:token-type:id_token",
+		"token_url":                         "https://sts.googleapis.com/v1/token",
+		"service_account_impersonation_url": fmt.Sprintf("https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/%s:generateAccessToken", serviceAccountEmail),
+		"credential_source": map[string]string{
+			"file": idTokenPath,
+		},
+	}
+
+	jsonData, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal json data: %w", err)
+	}
+
+	err = os.WriteFile(credsPath, jsonData, 0644)
+	if err != nil {
+		return "", fmt.Errorf("failed to write to credentials file: %w", err)
+	}
+
+	fmt.Printf("credsPath: %s\n", credsPath)
+
+	return credsPath, nil
 }
