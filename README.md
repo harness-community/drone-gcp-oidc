@@ -25,8 +25,8 @@ To learn how to utilize Drone plugins in Harness CI, please consult the provided
 
 ## Notes
 
-- This plugin necessitates an OIDC token, identified as `PLUGIN_OIDC_TOKEN_ID`, which is supplied as a stage variable. This token is not manually configured; instead, the CI stage recognizes that the Plugin Step involving the `drone-gcp-oidc` plugin is being executed. If this is the case, the CI stage calls the OIDC token generator API from the platform and sets the generated token in the `PLUGIN_OIDC_TOKEN_ID` environment variable.
-
+- `PLUGIN_OIDC_TOKEN_ID` is not manually configured; instead, the CI stage recognizes that the Plugin Step involving the `drone-gcp-oidc` plugin is being executed. If this is the case, the CI stage calls the OIDC token generator API from the platform and sets the generated token in the `PLUGIN_OIDC_TOKEN_ID` environment variable.
+  
 - Please provide the `duration` in seconds, for example, the default value is 1 hour, i.e, 3600 seconds. The service account must have the `iam.allowServiceAccountCredentialLifetimeExtension` permission to set a custom duration.
 
 - The plugin creates `application_default_credentials.json` if the `create_application_credentials_file` flag is set to `true` in the plugin settings. Then in the subsequent steps, users can run the below commands to authenticate and get the Access token:
