@@ -88,7 +88,6 @@ The plugin `plugins/gcp-oidc` is available for the following architectures:
                 pool_id: d8291ka22
                 service_account_email_id: test-gcp@harness.io
                 provider_id: svr-account1
-                duration: 7200
                 create_application_credentials_file: true
 
 # Run step to use the access token to list the compute zones
