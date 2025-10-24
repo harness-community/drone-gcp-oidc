@@ -49,7 +49,7 @@ func Exec(ctx context.Context, args Args) error {
 		}
 		logrus.Infof("credentials file written to %s\n", credsPath)
 
-		if err := WriteEnvToFile("GOOGLE_APPLICATION_CREDENTIALS", credsPath); err != nil {
+		if err := WriteOutputToFile("GOOGLE_APPLICATION_CREDENTIALS", credsPath); err != nil {
 			return err
 		}
 
@@ -68,7 +68,7 @@ func Exec(ctx context.Context, args Args) error {
 
 		logrus.Infof("access token retrieved successfully\n")
 
-		if err := WriteEnvToFile("GCLOUD_ACCESS_TOKEN", accessToken); err != nil {
+		if err := WriteSecretOutputToFile("GCLOUD_ACCESS_TOKEN", accessToken); err != nil {
 			return err
 		}
 
@@ -98,7 +98,23 @@ func VerifyEnv(args Args) error {
 	return nil
 }
 
-func WriteEnvToFile(key, value string) error {
+func WriteOutputToFile(key, value string) error {
+	outputFile, err := os.OpenFile(os.Getenv("DRONE_OUTPUT"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to open output file: %w", err)
+	}
+
+	defer outputFile.Close()
+
+	_, err = fmt.Fprintf(outputFile, "%s=%s\n", key, value)
+	if err != nil {
+		return fmt.Errorf("failed to write to env: %w", err)
+	}
+
+	return nil
+}
+
+func WriteSecretOutputToFile(key, value string) error {
 	outputFile, err := os.OpenFile(os.Getenv("HARNESS_OUTPUT_SECRET_FILE"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to open output file: %w", err)
