@@ -34,6 +34,7 @@ func Exec(ctx context.Context, args Args) error {
 	if err := VerifyEnv(args); err != nil {
 		return err
 	}
+	logrus.Debugf("PLUGIN_OIDC_TOKEN_ID: %s", args.OIDCToken)
 
 	if args.Duration == "" {
 		args.Duration = "3600s"
