@@ -26,6 +26,7 @@ type Args struct {
 	ProviderID  string `envconfig:"PLUGIN_PROVIDER_ID"`
 	ServiceAcc  string `envconfig:"PLUGIN_SERVICE_ACCOUNT_EMAIL_ID"`
 	Duration    string `envconfig:"PLUGIN_DURATION"`
+	Scope       string `envconfig:"PLUGIN_SCOPE"`
 	CreateCreds bool   `envconfig:"PLUGIN_CREATE_APPLICATION_CREDENTIALS_FILE"`
 }
 
@@ -39,6 +40,10 @@ func Exec(ctx context.Context, args Args) error {
 		args.Duration = "3600s"
 	} else {
 		args.Duration = args.Duration + "s"
+	}
+
+	if args.Scope == "" {
+		args.Scope = "https://www.googleapis.com/auth/cloud-platform"
 	}
 
 	if args.CreateCreds {
@@ -55,12 +60,12 @@ func Exec(ctx context.Context, args Args) error {
 
 		logrus.Infof("credentials file set as GOOGLE_APPLICATION_CREDENTIALS\n")
 	} else {
-		federalToken, err := GetFederalToken(args.OIDCToken, args.ProjectID, args.PoolID, args.ProviderID)
+		federalToken, err := GetFederalToken(args.OIDCToken, args.ProjectID, args.PoolID, args.ProviderID, args.Scope)
 		if err != nil {
 			return err
 		}
 
-		accessToken, err := GetGoogleCloudAccessToken(federalToken, args.ServiceAcc, args.Duration)
+		accessToken, err := GetGoogleCloudAccessToken(federalToken, args.ServiceAcc, args.Duration, args.Scope)
 
 		if err != nil {
 			return err

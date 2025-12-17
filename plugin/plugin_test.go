@@ -137,6 +137,7 @@ func TestGetFederalToken(t *testing.T) {
 		projectID  string
 		poolID     string
 		providerID string
+		scope      string
 	}
 
 	tests := []struct {
@@ -151,6 +152,7 @@ func TestGetFederalToken(t *testing.T) {
 				projectID:  "project-id",
 				poolID:     "pool-id",
 				providerID: "provider-id",
+				scope:      "https://www.googleapis.com/auth/cloud-platform",
 			},
 			wantErr: true,
 		},
@@ -158,7 +160,7 @@ func TestGetFederalToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := GetFederalToken(tt.args.idToken, tt.args.projectID, tt.args.poolID, tt.args.providerID)
+			_, err := GetFederalToken(tt.args.idToken, tt.args.projectID, tt.args.poolID, tt.args.providerID, tt.args.scope)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetFederalToken() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -172,6 +174,7 @@ func TestGetGoogleCloudAccessToken(t *testing.T) {
 		federatedToken      string
 		serviceAccountEmail string
 		duration            string
+		scope               string
 	}
 
 	tests := []struct {
@@ -185,6 +188,7 @@ func TestGetGoogleCloudAccessToken(t *testing.T) {
 				federatedToken:      "federated-token",
 				serviceAccountEmail: "service-account-email",
 				duration:            "3600",
+				scope:               "https://www.googleapis.com/auth/cloud-platform",
 			},
 			wantErr: true,
 		},
@@ -192,7 +196,7 @@ func TestGetGoogleCloudAccessToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := GetGoogleCloudAccessToken(tt.args.federatedToken, tt.args.serviceAccountEmail, tt.args.duration)
+			_, err := GetGoogleCloudAccessToken(tt.args.federatedToken, tt.args.serviceAccountEmail, tt.args.duration, tt.args.scope)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetGoogleCloudAccessToken() error = %v, wantErr %v", err, tt.wantErr)
 			}
