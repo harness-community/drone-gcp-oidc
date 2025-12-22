@@ -21,6 +21,7 @@ To learn how to utilize Drone plugins in Harness CI, please consult the provided
 | provider_id <span style="font-size: 10px"><br/>`string`</span> <span style="color:red; font-size: 10px">`required`</span>              |                                                   | The provider ID for OIDC authentication.                        |
 | service_account_email_id <span style="font-size: 10px"><br/>`string`</span> <span style="color:red; font-size: 10px">`required`</span> |                                                   | The email address of the service account.                       |
 | duration <span style="font-size: 10px"><br/>`string`</span>                                                                            | Default: `3600`                                   | The lifecycle duration of the access token generated in seconds |
+| scope <span style="font-size: 10px"><br/>`string`</span>                                                                               | Default: `https://www.googleapis.com/auth/cloud-platform` | Comma-separated OAuth scopes for the access token. Example: `https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/androidpublisher` |
 | create_application_credentials_file <span style="font-size: 10px"><br/>`boolean`</span>                                                | Default: `false`                                  | Create application_default_credentials.json                     |
 
 ## Notes
@@ -32,6 +33,7 @@ To learn how to utilize Drone plugins in Harness CI, please consult the provided
 - The plugin creates `application_default_credentials.json` if the `create_application_credentials_file` flag is set to `true` in the plugin settings. Then in the subsequent steps, users can run the below commands to authenticate and get the Access token:
   - `gcloud auth login --brief --cred-file <+execution.steps.STEP_ID.output.outputVariables.GOOGLE_APPLICATION_CREDENTIALS>`
   - `gcloud config config-helper --format="json(credential)"` - This will generate access token.
+  - **Note**: When using `create_application_credentials_file: true`, the `scope` setting does not apply. Google's external_account ADC JSON format does not support embedding scopes. Scopes must be configured in your application code when initializing the Google Cloud client libraries.
 - The plugin outputs the access token in the form of an environment variable that can be accessed in the subsequent pipeline steps like this: `<+steps.STEP_ID.output.outputVariables.GCLOUD_ACCESS_TOKEN>`
 
 ## Plugin Image

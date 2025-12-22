@@ -7,6 +7,7 @@ package plugin
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"golang.org/x/oauth2"
 	"google.golang.org/api/iamcredentials/v1"
@@ -56,8 +57,10 @@ func GetGoogleCloudAccessToken(federatedToken string, serviceAccountEmail string
 	}
 
 	name := "projects/-/serviceAccounts/" + serviceAccountEmail
+	// Split comma-separated scopes to support multiple OAuth scopes
+	// e.g., "https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/androidpublisher"
 	rb := &iamcredentials.GenerateAccessTokenRequest{
-		Scope:    []string{scope},
+		Scope:    strings.Split(scope, ","),
 		Lifetime: duration,
 	}
 

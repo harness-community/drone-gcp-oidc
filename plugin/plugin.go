@@ -47,6 +47,10 @@ func Exec(ctx context.Context, args Args) error {
 	}
 
 	if args.CreateCreds {
+		// Note: The 'scope' setting does not apply in credentials file mode.
+		// Google's external_account ADC JSON format does not support embedding scopes.
+		// Scopes must be configured in your application code when initializing
+		// the Google Cloud client libraries. See: https://google.aip.dev/auth/4117
 		logrus.Infof("creating credentials file\n")
 		credsPath, err := WriteCredentialsToFile(args.OIDCToken, args.ProjectID, args.PoolID, args.ProviderID, args.ServiceAcc)
 		if err != nil {
