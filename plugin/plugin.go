@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 )
@@ -47,6 +48,12 @@ func Exec(ctx context.Context, args Args) error {
 	}
 
 	if args.CreateCreds {
+		// Return error if user specified multiple scopes with credentials file mode
+		if strings.Contains(args.Scope, ",") {
+			return fmt.Errorf("multiple scopes are not supported in credentials file mode. " +
+				"Google's external_account ADC JSON format does not support embedding scopes. " +
+				"Either use a single scope or disable create_application_credentials_file to use direct token exchange")
+		}
 		// Note: The 'scope' setting does not apply in credentials file mode.
 		// Google's external_account ADC JSON format does not support embedding scopes.
 		// Scopes must be configured in your application code when initializing
@@ -64,11 +71,16 @@ func Exec(ctx context.Context, args Args) error {
 
 		logrus.Infof("credentials file set as GOOGLE_APPLICATION_CREDENTIALS\n")
 	} else {
-		federalToken, err := GetFederalToken(args.OIDCToken, args.ProjectID, args.PoolID, args.ProviderID, args.Scope)
+		// Per AIP-4117: "cloud platform or IAM scope should be passed to STS and then
+		// the customer provided scopes should be passed in the IamCredentials call to generateAccessToken"
+		// See: https://google.aip.dev/auth/4117
+		stsScope := "https://www.googleapis.com/auth/cloud-platform"
+		federalToken, err := GetFederalToken(args.OIDCToken, args.ProjectID, args.PoolID, args.ProviderID, stsScope)
 		if err != nil {
 			return err
 		}
 
+		// Pass user's custom scopes (comma-separated) to generateAccessToken for the final access token
 		accessToken, err := GetGoogleCloudAccessToken(federalToken, args.ServiceAcc, args.Duration, args.Scope)
 
 		if err != nil {
