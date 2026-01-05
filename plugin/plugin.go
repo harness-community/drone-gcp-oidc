@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/sirupsen/logrus"
 )
@@ -48,9 +47,9 @@ func Exec(ctx context.Context, args Args) error {
 	}
 
 	if args.CreateCreds {
-		// ADC JSON format does not support multiple scopes (AIP-4117)
-		if strings.Contains(args.Scope, ",") {
-			return fmt.Errorf("multiple scopes are not supported in credentials file mode. " +
+		// ADC JSON format does not support custom scopes (AIP-4117)
+		if args.Scope != "https://www.googleapis.com/auth/cloud-platform" {
+			return fmt.Errorf("custom scopes are not supported in credentials file mode. " +
 				"Use direct token exchange or configure scopes in your application code")
 		}
 		logrus.Infof("creating credentials file\n")

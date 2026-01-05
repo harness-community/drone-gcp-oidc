@@ -100,7 +100,7 @@ func TestVerifyEnv(t *testing.T) {
 	}
 }
 
-func TestWriteEnvToFile(t *testing.T) {
+func TestWriteOutputToFile(t *testing.T) {
 	type args struct {
 		key   string
 		value string
@@ -123,9 +123,9 @@ func TestWriteEnvToFile(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := WriteEnvToFile(tt.args.key, tt.args.value)
+			err := WriteOutputToFile(tt.args.key, tt.args.value)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("WriteEnvToFile() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("WriteOutputToFile() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
