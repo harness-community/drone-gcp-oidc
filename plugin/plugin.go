@@ -26,6 +26,7 @@ type Args struct {
 	ProviderID  string `envconfig:"PLUGIN_PROVIDER_ID"`
 	ServiceAcc  string `envconfig:"PLUGIN_SERVICE_ACCOUNT_EMAIL_ID"`
 	Duration    string `envconfig:"PLUGIN_DURATION"`
+	Scope       string `envconfig:"PLUGIN_SCOPE"`
 	CreateCreds bool   `envconfig:"PLUGIN_CREATE_APPLICATION_CREDENTIALS_FILE"`
 }
 
@@ -41,7 +42,16 @@ func Exec(ctx context.Context, args Args) error {
 		args.Duration = args.Duration + "s"
 	}
 
+	if args.Scope == "" {
+		args.Scope = "https://www.googleapis.com/auth/cloud-platform"
+	}
+
 	if args.CreateCreds {
+		// ADC JSON format does not support custom scopes (AIP-4117)
+		if args.Scope != "https://www.googleapis.com/auth/cloud-platform" {
+			return fmt.Errorf("custom scopes are not supported in credentials file mode. " +
+				"Use direct token exchange or configure scopes in your application code")
+		}
 		logrus.Infof("creating credentials file\n")
 		credsPath, err := WriteCredentialsToFile(args.OIDCToken, args.ProjectID, args.PoolID, args.ProviderID, args.ServiceAcc)
 		if err != nil {
@@ -55,12 +65,14 @@ func Exec(ctx context.Context, args Args) error {
 
 		logrus.Infof("credentials file set as GOOGLE_APPLICATION_CREDENTIALS\n")
 	} else {
-		federalToken, err := GetFederalToken(args.OIDCToken, args.ProjectID, args.PoolID, args.ProviderID)
+		// STS requires cloud-platform scope for service account impersonation (AIP-4117)
+		stsScope := "https://www.googleapis.com/auth/cloud-platform"
+		federalToken, err := GetFederalToken(args.OIDCToken, args.ProjectID, args.PoolID, args.ProviderID, stsScope)
 		if err != nil {
 			return err
 		}
 
-		accessToken, err := GetGoogleCloudAccessToken(federalToken, args.ServiceAcc, args.Duration)
+		accessToken, err := GetGoogleCloudAccessToken(federalToken, args.ServiceAcc, args.Duration, args.Scope)
 
 		if err != nil {
 			return err
