@@ -28,6 +28,7 @@ type Args struct {
 	Duration    string `envconfig:"PLUGIN_DURATION"`
 	Scope       string `envconfig:"PLUGIN_SCOPE"`
 	CreateCreds bool   `envconfig:"PLUGIN_CREATE_APPLICATION_CREDENTIALS_FILE"`
+	Home        string `envconfig:"PLUGIN_HOME"`
 }
 
 // Exec executes the plugin.
@@ -53,7 +54,7 @@ func Exec(ctx context.Context, args Args) error {
 				"Use direct token exchange or configure scopes in your application code")
 		}
 		logrus.Infof("creating credentials file\n")
-		credsPath, err := WriteCredentialsToFile(args.OIDCToken, args.ProjectID, args.PoolID, args.ProviderID, args.ServiceAcc)
+		credsPath, err := WriteCredentialsToFile(args.OIDCToken, args.ProjectID, args.PoolID, args.ProviderID, args.ServiceAcc, args.HomeDir)
 		if err != nil {
 			return err
 		}
@@ -142,12 +143,18 @@ func WriteSecretOutputToFile(key, value string) error {
 	return nil
 }
 
-func WriteCredentialsToFile(idToken, projectNumber, workforcePoolID, providerID, serviceAccountEmail string) (string, error) {
-	homeDir := os.Getenv("DRONE_WORKSPACE")
-
-	if homeDir == "" || homeDir == "/" {
-		fmt.Print("could not get home directory, using /home/harness as home directory")
-		homeDir = "/home/harness"
+func WriteCredentialsToFile(idToken, projectNumber, workforcePoolID, providerID, serviceAccountEmail, home string) (string, error) {
+	homeDir := ""
+	
+	if !home {
+		homeDir = os.Getenv("DRONE_WORKSPACE")
+	
+		if homeDir == "" || homeDir == "/" {
+			fmt.Print("could not get home directory, using /home/harness as home directory")
+			homeDir = "/home/harness"
+		}
+	} else {
+		homeDir = home
 	}
 
 	idTokenDir := fmt.Sprintf("%s/tmp", homeDir)
