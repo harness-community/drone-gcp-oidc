@@ -2,8 +2,6 @@ module github.com/harness-community/drone-gcp-oidc
 
 go 1.26.0
 
-toolchain go1.26.6
-
 require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/sirupsen/logrus v1.9.4
