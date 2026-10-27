@@ -1,6 +1,6 @@
 FROM alpine:latest as builder
 
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add 'ca-certificates>=20261020-r0'
 
 FROM scratch
 
