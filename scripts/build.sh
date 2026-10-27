@@ -14,4 +14,4 @@ GOOS=linux GOARCH=amd64 go build -o release/linux/amd64/drone-oidc
 GOOS=linux GOARCH=arm64 go build -o release/linux/arm64/drone-oidc
 
 # windows
-GOOS=windows go build -o release/windows/amd64/drone-oidc.exe
+GOOS=windows GOARCH=amd64 go build -o release/windows/amd64/drone-oidc.exe
